@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 私人加密仓库 · 自用</title>
+    <!-- 使用 CryptoJS 做 AES 加密，保证本地隐私 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0b0f1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 1200px;
+            width: 100%;
+            background: #141a26;
+            border-radius: 32px;
+            padding: 24px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            border: 1px solid #2b3445;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.3px;
+            color: #eef2ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        h1 span {
+            background: #2a3a5e;
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            color: #b9c7f0;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .subtitle {
+            color: #7d8daa;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1f2a3a;
+            padding-bottom: 16px;
+        }
+
+        .lock-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #1e2a3d;
+            padding: 5px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            color: #6ed4a0;
+            border: 1px solid #2d4a3a;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        button {
+            background: #1f2a3a;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            color: #e3e9f5;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s, transform 0.1s;
+            border: 1px solid #2d3a4e;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            background: #2b384e;
+            border-color: #3f526b;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button.primary {
+            background: #2e4a7a;
+            border-color: #4a6fa5;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #3a5a8f;
+        }
+
+        button.danger {
+            background: #3a242a;
+            border-color: #5e3a44;
+            color: #ffb3c1;
+        }
+
+        button.danger:hover {
+            background: #542e38;
+        }
+
+        .input-area {
+            background: #0f131c;
+            border-radius: 24px;
+            padding: 18px 20px;
+            margin-bottom: 22px;
+            border: 1px solid #202a38;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .input-area label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #9aa9c4;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        textarea {
+            width: 100%;
+            background: #0b0f16;
+            border: 1px solid #232d3c;
+            border-radius: 16px;
+            padding: 14px 18px;
+            color: #ced9f0;
+            font-size: 14px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            resize: vertical;
+            min-height: 100px;
+            outline: none;
+            transition: border 0.15s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            border-color: #3d5a80;
+        }
+
+        .parse-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #6b7b99;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .items-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0 16px;
+            max-height: 460px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .items-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .items-grid::-webkit-scrollbar-thumb {
+            background: #2e3d54;
+            border-radius: 20px;
+        }
+
+        .item-card {
+            background: #10161f;
+            border: 1px solid #202c3d;
+            border-radius: 18px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: border 0.1s, background 0.1s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .item-card:hover {
+            border-color: #31445e;
+            background: #121b26;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .item-type {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b8bb0;
+            font-weight: 600;
+        }
+
+        .item-label {
+            font-size: 15px;
+            font-weight: 500;
+            color: #d6e2ff;
+            word-break: break-word;
+        }
+
+        .item-value {
+            font-size: 13px;
+            font-family: 'SF Mono', monospace;
+            color: #b3c2dd;
+            background: #0c111a;
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 1px solid #1e2a38;
+            word-break: break-all;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-value .secret {
+            color: #ffd966;
+            filter: blur(4px);
+            transition: filter 0.2s;
+        }
+
+        .item-value:hover .secret {
+            filter: blur(0);
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            background: #1b2330;
+            border: 1px solid #2d3a4e;
+            border-radius: 40px;
+            padding: 8px 14px;
+            color: #b7c9e8;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+
+        .icon-btn:hover {
+            background: #253141;
+            border-color: #43587a;
+        }
+
+        .icon-btn.copy-btn {
+            background: #233b54;
+            border-color: #2f527a;
+            color: #c2dcff;
+        }
+
+        .icon-btn.copy-btn:hover {
+            background: #2f527a;
+        }
+
+        .empty-state {
+            color: #5a6c88;
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 14px;
+            background: #0e141e;
+            border-radius: 24px;
+            border: 1px dashed #253141;
+        }
+
+        .status-msg {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e2f3f;
+            color: #b8e6cf;
+            padding: 12px 22px;
+            border-radius: 50px;
+            font-size: 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+            border: 1px solid #3d6a5a;
+            z-index: 9999;
+            transition: opacity 0.2s;
+            backdrop-filter: blur(8px);
+            font-weight: 500;
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            color: #45546b;
+            font-size: 12px;
+            text-align: center;
+            border-top: 1px solid #1b2330;
+            padding-top: 14px;
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>
+        🔐 私人加密仓库
+        <span>本地·AES加密</span>
+    </h1>
+    <div class="subtitle">
+        <div class="lock-badge">
+            <span>🔒</span> 只有你能看到 · 自动识别API
+        </div>
+        <div>数据保留在浏览器</div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+        <button id="exportBtn" class="primary">📦 导出加密备份</button>
+        <button id="importBtn">📂 导入备份</button>
+        <button id="clearAllBtn" class="danger">🗑️ 清空所有</button>
+        <input type="file" id="fileInput" accept=".json,application/json" style="display: none;">
+    </div>
+
+    <!-- 粘贴自动识别区 -->
+    <div class="input-area">
+        <label>📋 粘贴任意文本（自动识别 URL + sk-... 格式）</label>
+        <textarea id="pasteArea" placeholder="例如：&#10;https://api.openai.com/v1  sk-xxxxxxxxxxxxxxxxxxxx&#10;https://api.anthropic.com  sk-ant-xxxxxxxx&#10;也可以直接写一行：https://xxx.com/v1 sk-abc123..."></textarea>
+        <div class="parse-actions">
+            <div class="hint">
+                <span>⚡ 程序智能识别，无需AI</span>
+                <span>•</span>
+                <span>紧邻的URL和sk-会自动配对</span>
+            </div>
+            <button id="parseBtn" class="primary">🔍 识别并存储</button>
+        </div>
+    </div>
+
+    <!-- 存储的条目列表 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="color: #a3b5d4; font-size: 14px; font-weight: 500;">
+            📋 已保存的密钥
+        </div>
+        <div style="font-size: 12px; color: #6b7b99;" id="itemCount">0 条</div>
+    </div>
+
+    <div id="itemsContainer" class="items-grid">
+        <!-- 动态渲染 -->
+    </div>
+
+    <div class="footer-note">
+        <span>🔑 使用主密码加密</span>
+        <span>🛡️ 内存中解密</span>
+        <span>📋 点击复制即用</span>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- 加密与存储 ----------
+        const STORAGE_KEY = 'encrypted_vault_v1';
+        const SALT_KEY = 'vault_salt_v1';
+        const MASTER_HASH_KEY = 'vault_master_hash_v1';
+
+        // 全局主密码（仅在当前会话内存中）
+        let masterPassword = null;
+        // 内存中的解密数据 [{ id, type, url, key, label }]
+        let decryptedItems = [];
+
+        // ---------- 工具函数 ----------
+        function showStatus(msg, isError = false) {
+            const existing = document.querySelector('.status-msg');
+            if (existing) existing.remove();
+            const div = document.createElement('div');
+            div.className = 'status-msg';
+            div.textContent = msg;
+            if (isError) {
+                div.style.background = '#3a1f2a';
+                div.style.color = '#ffb0b0';
+                div.style.borderColor = '#7a3d4a';
+            } else {
+                div.style.background = '#1e2f3f';
+                div.style.color = '#b8e6cf';
+                div.style.borderColor = '#3d6a5a';
+            }
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 2600);
+        }
+
+        // 生成随机 salt
+        function generateSalt(len = 16) {
+            const array = new Uint8Array(len);
+            crypto.getRandomValues(array);
+            return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // 从密码派生密钥 (使用 PBKDF2 或者简单哈希，这里用 CryptoJS 的 SHA256 + salt 多轮)
+        function deriveKey(password, salt) {
+            // 使用 SHA256 加盐迭代 1000 次，模拟密钥派生
+            let key = CryptoJS.SHA256(password + salt).toString();
+            for (let i = 0; i < 999; i++) {
+                key = CryptoJS.SHA256(key + salt).toString();
+            }
+            return key; // hex string
+        }
+
+        // 加密数据 (AES)
+        function encryptData(plainText, keyHex) {
+            const key = CryptoJS.enc.Hex.parse(keyHex);
+            const iv = CryptoJS.lib.WordArray.random(16);
+            const encrypted = CryptoJS.AES.encrypt(plainText, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+            // 返回 iv + 密文
+            return iv.toString() + ':' + encrypted.toString();
+        }
+
+        // 解密数据
+        function decryptData(cipherWithIv, keyHex) {
+            const parts = cipherWithIv.split(':');
+            if (parts.length !== 2) throw new Error('无效密文格式');
+            const iv = CryptoJS.enc.Hex.parse(parts[0]);
+            const ciphertext = parts[1];
+            const key = CryptoJS.enc.Hex.parse(keyHex);
+            const decrypted = CryptoJS.AES.decrypt(ciphertext, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        }
+
+        // 从 localStorage 加载加密数据并解密到 decryptedItems
+        function loadAndDecryptItems() {
+            const encrypted = localStorage.getItem(STORAGE_KEY);
+            if (!encrypted) {
+                decryptedItems = [];
+                return true;
+            }
+            if (!masterPassword) return false; // 无密码无法解密
+
+            const salt = localStorage.getItem(SALT_KEY);
+            if (!salt) return false;
+
+            try {
+                const keyHex = deriveKey(masterPassword, salt);
+                const plainJson = decryptData(encrypted, keyHex);
+                decryptedItems = JSON.parse(plainJson) || [];
+                return true;
+            } catch (e) {
+                console.error('解密失败', e);
+                return false;
+            }
+        }
+
+        // 加密并保存 decryptedItems 到 localStorage
+        function encryptAndSaveItems() {
+            if (!masterPassword) {
+                showStatus('请先设置主密码', true);
+                return false;
+            }
+            let salt = localStorage.getItem(SALT_KEY);
+            if (!salt) {
+                salt = generateSalt(16);
+                localStorage.setItem(SALT_KEY, salt);
+            }
+            const keyHex = deriveKey(masterPassword, salt);
+            const plainJson = JSON.stringify(decryptedItems);
+            const encrypted = encryptData(plainJson, keyHex);
+            localStorage.setItem(STORAGE_KEY, encrypted);
+            return true;
+        }
+
+        // 首次设置主密码或者验证密码
+        function ensureMasterPassword() {
+            if (masterPassword) return true;
+
+            const storedHash = localStorage.getItem(MASTER_HASH_KEY);
+            if (storedHash) {
+                // 已有密码，验证
+                const pwd = prompt('🔑 输入主密码解锁仓库：');
+                if (!pwd) return false;
+                const salt = localStorage.getItem(SALT_KEY) || '';
+                const hash = CryptoJS.SHA256(pwd + salt).toString();
+                if (hash !== storedHash) {
+                    showStatus('密码错误，无法访问', true);
+                    return false;
+                }
+                masterPassword = pwd;
+                // 尝试解密已有数据
+                if (!loadAndDecryptItems()) {
+                    showStatus('解密失败，可能密码错误或数据损坏', true);
+                    masterPassword = null;
+                    return false;
+                }
+                renderItems();
+                showStatus('解锁成功');
+                return true;
+            } else {
+                // 全新设置密码
+                const pwd = prompt('🔐 设置主密码（用于加密所有数据，务必记住）：');
+                if (!pwd || pwd.trim() === '') {
+                    showStatus('必须设置密码', true);
+                    return false;
+                }
+                const confirm = prompt('再次输入主密码确认：');
+                if (pwd !== confirm) {
+                    showStatus('两次输入不一致', true);
+                    return false;
+                }
+                const salt = generateSalt(16);
+                localStorage.setItem(SALT_KEY, salt);
+                const hash = CryptoJS.SHA256(pwd + salt).toString();
+                localStorage.setItem(MASTER_HASH_KEY, hash);
+                masterPassword = pwd;
+                decryptedItems = [];
+                encryptAndSaveItems();
+                renderItems();
+                showStatus('主密码已设置，仓库已加密');
+                return true;
+            }
+        }
+
+        // ---------- 自动识别 URL + sk- 逻辑 ----------
+        // 匹配 URL 后面跟着 sk- 密钥，返回 { url, key, label }
+        function parseApiKeys(text) {
+            // 先按行分割，再合并行内内容
+            const lines = text.split(/\r?\n/);
+            const results = [];
+            // 将每一行再拆成token, 但保留url和sk-的相邻关系
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                // 尝试匹配 一个URL 紧接着 sk- 开头的字符串（中间可有空格/逗号等）
+                // 使用正则: (https?:\/\/[^\s,;]+)\s*[,;\s]?\s*(sk-[a-zA-Z0-9\-_]+)
+                const regex = /(https?:\/\/[^\s,;]+)\s*[,;\s]?\s*(sk-[a-zA-Z0-9\-_]+)/gi;
+                let match;
+                let foundInLine = false;
+                while ((match = regex.exec(line)) !== null) {
+                    foundInLine = true;
+                    const url = match[1].trim();
+                    const key = match[2].trim();
+                    if (url && key) {
+                        results.push({
+                            url: url,
+                            key: key,
+                            label: 'API 密钥'
+                        });
+                    }
+                }
+                // 如果整行没有匹配，再检查是否只有 sk- 开头或者 url 单独出现？ 为了不遗漏，但也要谨慎。
+                // 但用户只要求url紧跟着sk，所以不额外处理单独的了。不过对于类似 "sk-xxxx" 单独出现，我们不自动存储，因为可能无意义。
+                // 但可能一行是 "https://... sk-..." 已匹配。如果一行是多个呢？regex 已经全局匹配。
+                // 更宽松一点: 如果没找到匹配，但行内包含 sk- 和 http，但是顺序不对或中间有别的？我们简单处理：查找所有URL和所有sk-，如果数量相等且在同一行，按顺序配对？
+                // 为了更智能，再尝试简单配对：提取行内所有URL和所有sk-字符串，如果数量一致就按顺序配对。
+                if (!foundInLine) {
+                    const urlPattern = /https?:\/\/[^\s,;]+/gi;
+                    const keyPattern = /sk-[a-zA-Z0-9\-_]+/gi;
+                    const urls = line.match(urlPattern) || [];
+                    const keys = line.match(keyPattern) || [];
+                    if (urls.length > 0 && urls.length === keys.length) {
+                        for (let i = 0; i < urls.length; i++) {
+                            results.push({
+                                url: urls[i],
+                                key: keys[i],
+                                label: 'API 密钥'
+                            });
+                        }
+                    } else if (urls.length === 1 && keys.length === 1) {
+                        results.push({
+                            url: urls[0],
+                            key: keys[0],
+                            label: 'API 密钥'
+                        });
+                    }
+                }
+            }
+            // 去重 (根据url+key)
+            const unique = [];
+            const seen = new Set();
+            for (let r of results) {
+                const sig = r.url + '|' + r.key;
+                if (!seen.has(sig)) {
+                    seen.add(sig);
+                    unique.push(r);
+                }
+            }
+            return unique;
+        }
+
+        // ---------- 渲染列表 ----------
+        function renderItems() {
+            const container = document.getElementById('itemsContainer');
+            const countSpan = document.getElementById('itemCount');
+            if (!container) return;
+
+            if (!decryptedItems.length) {
+                container.innerHTML = `<div class="empty-state">✨ 还没有保存任何密钥<br><span style="font-size: 12px;">粘贴包含 URL 和 sk- 的文本，点击「识别并存储」</span></div>`;
+                if (countSpan) countSpan.textContent = '0 条';
+                return;
+            }
+
+            let html = '';
+            decryptedItems.forEach((item, index) => {
+                // 脱敏显示 key
+                const keyPreview = item.key.length > 12 ? item.key.slice(0, 6) + '...' + item.key.slice(-6) : item.key;
+                html += `
+                    <div class="item-card" data-index="${index}">
+                        <div class="item-info">
+                            <div class="item-type">${escapeHtml(item.label || 'API 密钥')}</div>
+                            <div class="item-label">${escapeHtml(item.url)}</div>
+                            <div class="item-value">
+                                <span class="secret" title="悬停显示完整密钥">${escapeHtml(keyPreview)}</span>
+                                <span style="color: #4a5f7a; font-size: 11px;">(悬停显示完整)</span>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="icon-btn copy-btn" data-copy-index="${index}">📋 复制</button>
+                            <button class="icon-btn" data-delete-index="${index}">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            if (countSpan) countSpan.textContent = `${decryptedItems.length} 条`;
+
+            // 绑定复制事件
+            container.querySelectorAll('[data-copy-index]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = btn.dataset.copyIndex;
+                    if (idx !== undefined && decryptedItems[idx]) {
+                        const item = decryptedItems[idx];
+                        // 复制格式: url + 空格 + key
+                        const copyText = `${item.url} ${item.key}`;
+                        navigator.clipboard.writeText(copyText).then(() => {
+                            showStatus('✅ 已复制 API URL 和密钥');
+                        }).catch(() => {
+                            showStatus('复制失败，请手动复制', true);
+                        });
+                    }
+                });
+            });
+
+            // 绑定删除事件
+            container.querySelectorAll('[data-delete-index]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = btn.dataset.deleteIndex;
+                    if (idx !== undefined && decryptedItems[idx]) {
+                        if (confirm('确定删除这条记录吗？')) {
+                            decryptedItems.splice(idx, 1);
+                            if (encryptAndSaveItems()) {
+                                renderItems();
+                                showStatus('已删除');
+                            } else {
+                                showStatus('删除失败，请重试', true);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>"]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                if (m === '"') return '&quot;';
+                return m;
+            });
+        }
+
+        // ---------- 初始化加载 ----------
+        function init() {
+            // 先检查是否有密码，如果有，必须输入才能继续
+            const storedHash = localStorage.getItem(MASTER_HASH_KEY);
+            if (storedHash) {
+                // 有密码，显示锁定状态，等待用户解锁
+                const container = document.getElementById('itemsContainer');
+                if (container) {
+                    container.innerHTML = `<div class="empty-state">🔒 仓库已加密<br><span style="font-size: 12px;">请点击任意功能按钮输入主密码解锁</span></div>`;
+                }
+                // 绑定一个全局解锁事件，但每次操作都会触发 ensureMasterPassword
+            } else {
+                // 没有密码，可以直接设置
+                // 但不自动弹出，等用户点击按钮或者粘贴时触发
+                renderItems(); // 空列表
+            }
+        }
+
+        // 每次涉及读写时确保密码已设置并解密
+        function requireUnlock() {
+            if (!masterPassword) {
+                if (!ensureMasterPassword()) return false;
+            }
+            // 如果密码已存在但 decryptedItems 为空且 localstorage 有数据，尝试再次解密
+            if (masterPassword && decryptedItems.length === 0) {
+                if (localStorage.getItem(STORAGE_KEY)) {
+                    loadAndDecryptItems();
+                }
+            }
+            return true;
+        }
+
+        // ---------- 事件绑定 ----------
+        window.addEventListener('load', () => {
+            init();
+
+            // 解析按钮
+            document.getElementById('parseBtn').addEventListener('click', () => {
+                if (!requireUnlock()) return;
+
+                const textarea = document.getElementById('pasteArea');
+                const text = textarea.value.trim();
+                if (!text) {
+                    showStatus('请粘贴一些内容', true);
+                    return;
+                }
+
+                const parsed = parseApiKeys(text);
+                if (parsed.length === 0) {
+                    showStatus('未识别到 URL + sk- 格式，请检查', true);
+                    return;
+                }
+
+                // 合并到现有列表，去重（基于url+key）
+                const existingSig = new Set(decryptedItems.map(it => it.url + '|' + it.key));
+                let added = 0;
+                for (let p of parsed) {
+                    const sig = p.url + '|' + p.key;
+                    if (!existingSig.has(sig)) {
+                        decryptedItems.push({
+                            id: Date.now() + Math.random().toString(36).substr(2, 6),
+                            type: 'api',
+                            url: p.url,
+                            key: p.key,
+                            label: p.label || 'API 密钥'
+                        });
+                        existingSig.add(sig);
+                        added++;
+                    }
+                }
+
+                if (added > 0) {
+                    if (encryptAndSaveItems()) {
+                        renderItems();
+                        textarea.value = ''; // 清空方便下次粘贴
+                        showStatus(`✅ 识别并保存了 ${added} 条API密钥`);
+                    } else {
+                        showStatus('保存失败，请重试', true);
+                    }
+                } else {
+                    showStatus('没有新的密钥（已存在相同条目）', false);
+                }
+            });
+
+            // 导出加密备份
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                if (!requireUnlock()) return;
+                const encrypted = localStorage.getItem(STORAGE_KEY);
+                const salt = localStorage.getItem(SALT_KEY);
+                const hash = localStorage.getItem(MASTER_HASH_KEY);
+                if (!encrypted || !salt || !hash) {
+                    showStatus('没有可导出的数据', true);
+                    return;
+                }
+                const backup = {
+                    version: 1,
+                    salt: salt,
+                    masterHash: hash,
+                    encryptedData: encrypted,
+                    exportedAt: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vault_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showStatus('📦 加密备份已导出');
+            });
+
+            // 导入备份
+            const fileInput = document.getElementById('fileInput');
+            document.getElementById('importBtn').addEventListener('click', () => {
+                if (!requireUnlock()) return;  // 需要先解锁当前仓库（或者也可以允许导入覆盖？这里要求先解锁以防误操作）
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const backup = JSON.parse(ev.target.result);
+                        if (!backup.salt || !backup.encryptedData || !backup.masterHash) {
+                            throw new Error('备份文件格式不正确');
+                        }
+                        // 确认覆盖
+                        if (!confirm('导入将覆盖当前所有数据，确定吗？')) return;
+                        // 更新本地存储
+                        localStorage.setItem(SALT_KEY, backup.salt);
+                        localStorage.setItem(MASTER_HASH_KEY, backup.masterHash);
+                        localStorage.setItem(STORAGE_KEY, backup.encryptedData);
+                        // 重置主密码并重新解锁
+                        masterPassword = null;
+                        decryptedItems = [];
+                        // 触发重新解锁流程
+                        if (ensureMasterPassword()) {
+                            // 重新加载数据
+                            loadAndDecryptItems();
+                            renderItems();
+                            showStatus('✅ 备份导入成功');
+                        } else {
+                            showStatus('导入失败，密码错误', true);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showStatus('导入失败：文件损坏或格式错误', true);
+                    }
+                    fileInput.value = '';
+                };
+                reader.readAsText(file);
+            });
+
+            // 清空所有
+            document.getElementById('clearAllBtn').addEventListener('click', () => {
+                if (!requireUnlock()) return;
+                if (!confirm('⚠️ 确定清空所有存储的密钥吗？无法恢复！')) return;
+                decryptedItems = [];
+                localStorage.removeItem(STORAGE_KEY);
+                // 保留 salt 和 master hash 以便继续使用
+                encryptAndSaveItems(); // 保存空数组
+                renderItems();
+                showStatus('已清空所有数据');
+            });
+
+            // 点击复制悬停显示完整key (已在render里通过css hover实现)
+        });
+
+        // 处理粘贴后的自动识别：也可以加一个粘贴事件自动解析（可选），但用户要点击按钮，不自动，以防误操作。
+        // 我们保持手动点击。
+
+    })();
+</script>
+</body>
+</html>
