@@ -1,890 +1,1296 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔐 私人加密仓库 · 自用</title>
-    <!-- 使用 CryptoJS 做 AES 加密，保证本地隐私 -->
+    <title>🗂️ 我的密钥仓库</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
 
         body {
-            background: #0b0f1a;
+            background: #f0f4f8;
+            background-image: radial-gradient(circle at 10% 20%, rgba(200, 220, 255, 0.5) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(220, 200, 255, 0.4) 0%, transparent 40%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 30px 20px;
+            color: #2c3e50;
         }
 
         .app {
-            max-width: 1200px;
-            width: 100%;
-            background: #141a26;
-            border-radius: 32px;
-            padding: 24px 28px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
-            border: 1px solid #2b3445;
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
-        h1 {
-            font-size: 24px;
-            font-weight: 500;
-            letter-spacing: -0.3px;
-            color: #eef2ff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        h1 span {
-            background: #2a3a5e;
-            font-size: 14px;
-            padding: 4px 10px;
-            border-radius: 30px;
-            color: #b9c7f0;
-            font-weight: 400;
-            letter-spacing: 0.3px;
-        }
-
-        .subtitle {
-            color: #7d8daa;
-            font-size: 14px;
-            margin-bottom: 20px;
+        /* 顶部栏 */
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #1f2a3a;
-            padding-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .lock-badge {
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #2c3e50;
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: #1e2a3d;
-            padding: 5px 12px;
-            border-radius: 100px;
-            font-size: 12px;
-            color: #6ed4a0;
-            border: 1px solid #2d4a3a;
+            gap: 10px;
         }
 
-        .toolbar {
+        .header h1 .badge {
+            font-size: 12px;
+            background: #dbeafe;
+            color: #2563eb;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .header-actions {
             display: flex;
-            flex-wrap: wrap;
             gap: 10px;
-            margin-bottom: 18px;
+            flex-wrap: wrap;
         }
 
         button {
-            background: #1f2a3a;
             border: none;
-            border-radius: 40px;
-            padding: 10px 20px;
-            color: #e3e9f5;
-            font-weight: 500;
+            border-radius: 12px;
+            padding: 11px 20px;
             font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            transition: background 0.15s, transform 0.1s;
-            border: 1px solid #2d3a4e;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            gap: 7px;
+            transition: all 0.15s ease;
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
         }
 
         button:hover {
-            background: #2b384e;
-            border-color: #3f526b;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
         }
 
         button:active {
-            transform: scale(0.97);
+            transform: translateY(0);
         }
 
         button.primary {
-            background: #2e4a7a;
-            border-color: #4a6fa5;
+            background: #4f7df3;
             color: white;
+            box-shadow: 0 4px 14px rgba(79, 125, 243, 0.35);
         }
 
         button.primary:hover {
-            background: #3a5a8f;
+            background: #3d6be0;
         }
 
         button.danger {
-            background: #3a242a;
-            border-color: #5e3a44;
-            color: #ffb3c1;
+            background: #fee2e2;
+            color: #b91c1c;
+            box-shadow: none;
         }
 
         button.danger:hover {
-            background: #542e38;
+            background: #fecaca;
         }
 
-        .input-area {
-            background: #0f131c;
-            border-radius: 24px;
-            padding: 18px 20px;
-            margin-bottom: 22px;
-            border: 1px solid #202a38;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+        button.ghost {
+            background: white;
+            color: #4f7df3;
+            box-shadow: 0 0 0 1.5px #c7d9fc;
         }
 
-        .input-area label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #9aa9c4;
-            margin-bottom: 8px;
-            letter-spacing: 0.3px;
+        /* 粘贴区 */
+        .paste-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 22px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.03);
+        }
+
+        .paste-panel label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+
+        .paste-panel label span {
+            font-weight: 400;
+            font-size: 12px;
+            color: #94a3b8;
         }
 
         textarea {
             width: 100%;
-            background: #0b0f16;
-            border: 1px solid #232d3c;
-            border-radius: 16px;
-            padding: 14px 18px;
-            color: #ced9f0;
+            min-height: 120px;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 16px;
             font-size: 14px;
-            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            line-height: 1.7;
             resize: vertical;
-            min-height: 100px;
+            color: #1e293b;
+            background: #f8fafc;
             outline: none;
             transition: border 0.15s;
-            line-height: 1.5;
         }
 
         textarea:focus {
-            border-color: #3d5a80;
+            border-color: #93b4fb;
+            background: white;
         }
 
-        .parse-actions {
+        .paste-bottom {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 12px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: #6b7b99;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .items-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 20px 0 16px;
-            max-height: 460px;
-            overflow-y: auto;
-            padding-right: 6px;
-        }
-
-        .items-grid::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .items-grid::-webkit-scrollbar-thumb {
-            background: #2e3d54;
-            border-radius: 20px;
-        }
-
-        .item-card {
-            background: #10161f;
-            border: 1px solid #202c3d;
-            border-radius: 18px;
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-top: 14px;
             gap: 12px;
-            transition: border 0.1s, background 0.1s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            flex-wrap: wrap;
         }
 
-        .item-card:hover {
-            border-color: #31445e;
-            background: #121b26;
+        .paste-hint {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .item-info {
+        /* 列表区 */
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding: 0 4px;
+        }
+
+        .list-header .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .list-header .count {
+            font-size: 13px;
+            color: #94a3b8;
+            background: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .items {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            overflow: hidden;
-            flex: 1;
+            gap: 12px;
         }
 
-        .item-type {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #6b8bb0;
+        /* 卡片 */
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            transition: box-shadow 0.15s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .card-name {
+            font-size: 16px;
             font-weight: 600;
-        }
-
-        .item-label {
-            font-size: 15px;
-            font-weight: 500;
-            color: #d6e2ff;
-            word-break: break-word;
-        }
-
-        .item-value {
-            font-size: 13px;
-            font-family: 'SF Mono', monospace;
-            color: #b3c2dd;
-            background: #0c111a;
-            padding: 6px 10px;
-            border-radius: 12px;
-            border: 1px solid #1e2a38;
-            word-break: break-all;
+            color: #1e293b;
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
         }
 
-        .item-value .secret {
-            color: #ffd966;
-            filter: blur(4px);
-            transition: filter 0.2s;
+        .card-name .name-input {
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            padding: 2px 6px;
+            border-radius: 8px;
+            border-bottom: 2px dashed transparent;
+            outline: none;
+            width: auto;
+            min-width: 80px;
+            max-width: 280px;
+            font-family: inherit;
+            transition: border 0.15s;
         }
 
-        .item-value:hover .secret {
-            filter: blur(0);
+        .card-name .name-input:hover {
+            border-bottom-color: #cbd5e1;
         }
 
-        .item-actions {
+        .card-name .name-input:focus {
+            border-bottom-color: #4f7df3;
+        }
+
+        .card-actions {
             display: flex;
             gap: 6px;
             flex-shrink: 0;
         }
 
-        .icon-btn {
-            background: #1b2330;
-            border: 1px solid #2d3a4e;
-            border-radius: 40px;
-            padding: 8px 14px;
-            color: #b7c9e8;
-            font-size: 12px;
-            font-weight: 500;
+        .mini-btn {
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: 0.1s;
-            white-space: nowrap;
-        }
-
-        .icon-btn:hover {
-            background: #253141;
-            border-color: #43587a;
-        }
-
-        .icon-btn.copy-btn {
-            background: #233b54;
-            border-color: #2f527a;
-            color: #c2dcff;
-        }
-
-        .icon-btn.copy-btn:hover {
-            background: #2f527a;
-        }
-
-        .empty-state {
-            color: #5a6c88;
-            text-align: center;
-            padding: 40px 20px;
+            justify-content: center;
             font-size: 14px;
-            background: #0e141e;
-            border-radius: 24px;
-            border: 1px dashed #253141;
+            transition: all 0.15s;
         }
 
-        .status-msg {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #1e2f3f;
-            color: #b8e6cf;
-            padding: 12px 22px;
-            border-radius: 50px;
-            font-size: 14px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
-            border: 1px solid #3d6a5a;
-            z-index: 9999;
-            transition: opacity 0.2s;
-            backdrop-filter: blur(8px);
-            font-weight: 500;
+        .mini-btn:hover {
+            background: #e2e8f0;
+            color: #334155;
         }
 
-        .footer-note {
-            margin-top: 16px;
-            color: #45546b;
+        .mini-btn.delete:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* 字段行 */
+        .field-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .field-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
             font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 42px;
+            flex-shrink: 0;
+        }
+
+        .field-value {
+            flex: 1;
+            font-size: 13.5px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            color: #1e293b;
+            word-break: break-all;
+            line-height: 1.5;
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1.5px solid transparent;
+            background: transparent;
+            outline: none;
+            transition: border 0.15s, background 0.15s;
+            min-width: 0;
+        }
+
+        .field-value:hover {
+            background: white;
+            border-color: #e2e8f0;
+        }
+
+        .field-value:focus {
+            background: white;
+            border-color: #93b4fb;
+            box-shadow: 0 0 0 3px rgba(147, 180, 251, 0.15);
+        }
+
+        .field-value.masked {
+            color: #94a3b8;
+            letter-spacing: 2px;
+        }
+
+        .field-btns {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .copy-btn {
+            border: none;
+            background: #eef4ff;
+            color: #4f7df3;
+            padding: 6px 14px;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-btn:hover {
+            background: #dbe7ff;
+        }
+
+        .copy-btn.copied {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .eye-btn {
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: color 0.15s;
+        }
+
+        .eye-btn:hover {
+            color: #4f7df3;
+        }
+
+        /* 空状态 */
+        .empty {
             text-align: center;
-            border-top: 1px solid #1b2330;
-            padding-top: 14px;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 20px;
+            color: #94a3b8;
+            font-size: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .empty .big {
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+
+        /* 提示条 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 13px 26px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            animation: toastIn 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.success {
+            background: #16a34a;
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* 安全键盘 */
+        .keyboard-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .keyboard-overlay.active {
+            display: flex;
+        }
+
+        .keyboard-modal {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .keyboard-modal h3 {
+            font-size: 16px;
+            color: #334155;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .keyboard-modal .sub {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .pin-display {
             display: flex;
             justify-content: center;
-            gap: 18px;
+            gap: 12px;
+            margin-bottom: 24px;
+            min-height: 48px;
+        }
+
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            transition: all 0.15s;
+        }
+
+        .pin-dot.filled {
+            background: #4f7df3;
+            transform: scale(1.1);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .key {
+            aspect-ratio: 1.4;
+            border: none;
+            background: #f8fafc;
+            border-radius: 14px;
+            font-size: 20px;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+            user-select: none;
+        }
+
+        .key:hover {
+            background: #eef2f7;
+        }
+
+        .key:active {
+            background: #dbeafe;
+            transform: scale(0.96);
+        }
+
+        .key.func {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .key.confirm {
+            background: #4f7df3;
+            color: white;
+        }
+
+        .key.confirm:hover {
+            background: #3d6be0;
+        }
+
+        .keyboard-hint {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 600px) {
+            body { padding: 16px 12px; }
+            .header h1 { font-size: 20px; }
+            .card-top { flex-direction: column; }
+            .card-actions { align-self: flex-end; }
+            .field-row { flex-wrap: wrap; }
+            .field-btns { width: 100%; justify-content: flex-end; }
         }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>
-        🔐 私人加密仓库
-        <span>本地·AES加密</span>
-    </h1>
-    <div class="subtitle">
-        <div class="lock-badge">
-            <span>🔒</span> 只有你能看到 · 自动识别API
+    <!-- 顶部 -->
+    <div class="header">
+        <h1>
+            🗂️ 我的密钥仓库
+            <span class="badge">本地加密</span>
+        </h1>
+        <div class="header-actions">
+            <button id="exportBtn" class="ghost">📦 导出备份</button>
+            <button id="importBtn" class="ghost">📂 导入备份</button>
+            <button id="clearBtn" class="danger">🗑️ 清空</button>
+            <input type="file" id="fileInput" accept=".json" class="hidden">
         </div>
-        <div>数据保留在浏览器</div>
     </div>
 
-    <!-- 工具栏 -->
-    <div class="toolbar">
-        <button id="exportBtn" class="primary">📦 导出加密备份</button>
-        <button id="importBtn">📂 导入备份</button>
-        <button id="clearAllBtn" class="danger">🗑️ 清空所有</button>
-        <input type="file" id="fileInput" accept=".json,application/json" style="display: none;">
-    </div>
-
-    <!-- 粘贴自动识别区 -->
-    <div class="input-area">
-        <label>📋 粘贴任意文本（自动识别 URL + sk-... 格式）</label>
-        <textarea id="pasteArea" placeholder="例如：&#10;https://api.openai.com/v1  sk-xxxxxxxxxxxxxxxxxxxx&#10;https://api.anthropic.com  sk-ant-xxxxxxxx&#10;也可以直接写一行：https://xxx.com/v1 sk-abc123..."></textarea>
-        <div class="parse-actions">
-            <div class="hint">
-                <span>⚡ 程序智能识别，无需AI</span>
-                <span>•</span>
-                <span>紧邻的URL和sk-会自动配对</span>
+    <!-- 粘贴区 -->
+    <div class="paste-panel">
+        <label>
+            📋 粘贴文本，自动识别成对的 URL 和密钥
+            <span>支持一次粘贴多个，自动配对</span>
+        </label>
+        <textarea id="pasteArea" placeholder="示例（可以一次粘贴很多行）：&#10;https://api.openai.com/v1    sk-xxxxxxxxxxxxxxxx&#10;https://api.anthropic.com     sk-ant-xxxxxxxx&#10;https://api.example.com       sk-abc123...&#10;&#10;也支持一行内多个：https://a.com sk-111... https://b.com sk-222..."></textarea>
+        <div class="paste-bottom">
+            <div class="paste-hint">
+                ⚡ 纯本地程序识别，无需 AI · 每对自动存储
             </div>
-            <button id="parseBtn" class="primary">🔍 识别并存储</button>
+            <button id="parseBtn" class="primary">✨ 识别并保存</button>
         </div>
     </div>
 
-    <!-- 存储的条目列表 -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div style="color: #a3b5d4; font-size: 14px; font-weight: 500;">
-            📋 已保存的密钥
-        </div>
-        <div style="font-size: 12px; color: #6b7b99;" id="itemCount">0 条</div>
+    <!-- 列表头 -->
+    <div class="list-header">
+        <div class="title">📌 已保存的密钥</div>
+        <div class="count" id="count">0 条</div>
     </div>
 
-    <div id="itemsContainer" class="items-grid">
-        <!-- 动态渲染 -->
-    </div>
+    <!-- 列表 -->
+    <div class="items" id="items"></div>
+</div>
 
-    <div class="footer-note">
-        <span>🔑 使用主密码加密</span>
-        <span>🛡️ 内存中解密</span>
-        <span>📋 点击复制即用</span>
+<!-- 安全键盘弹窗 -->
+<div class="keyboard-overlay" id="keyboardOverlay">
+    <div class="keyboard-modal">
+        <h3 id="keyboardTitle">🔐 输入主密码</h3>
+        <div class="sub" id="keyboardSub">使用下方键盘输入，防止键盘记录</div>
+        <div class="pin-display" id="pinDisplay"></div>
+        <div class="keypad" id="keypad"></div>
+        <div class="keyboard-hint">点击数字输入 · 支持退格 · 确认提交</div>
     </div>
 </div>
 
 <script>
-    (function(){
-        // ---------- 加密与存储 ----------
-        const STORAGE_KEY = 'encrypted_vault_v1';
-        const SALT_KEY = 'vault_salt_v1';
-        const MASTER_HASH_KEY = 'vault_master_hash_v1';
+(function(){
+    'use strict';
 
-        // 全局主密码（仅在当前会话内存中）
-        let masterPassword = null;
-        // 内存中的解密数据 [{ id, type, url, key, label }]
-        let decryptedItems = [];
+    // ==================== 加密存储 ====================
+    const STORAGE_KEY = 'vault_data_v2';
+    const SALT_KEY = 'vault_salt_v2';
+    const VERIFY_KEY = 'vault_verify_v2'; // 存储密码哈希用于验证
 
-        // ---------- 工具函数 ----------
-        function showStatus(msg, isError = false) {
-            const existing = document.querySelector('.status-msg');
-            if (existing) existing.remove();
-            const div = document.createElement('div');
-            div.className = 'status-msg';
-            div.textContent = msg;
-            if (isError) {
-                div.style.background = '#3a1f2a';
-                div.style.color = '#ffb0b0';
-                div.style.borderColor = '#7a3d4a';
-            } else {
-                div.style.background = '#1e2f3f';
-                div.style.color = '#b8e6cf';
-                div.style.borderColor = '#3d6a5a';
-            }
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 2600);
+    let masterPassword = null;
+    let items = []; // { id, name, url, key }
+
+    // ---------- 工具 ----------
+    function uuid() {
+        return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+    }
+
+    function toast(msg, type = '') {
+        const old = document.querySelector('.toast');
+        if (old) old.remove();
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => {
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 0.3s';
+            setTimeout(() => el.remove(), 300);
+        }, 2200);
+    }
+
+    // ---------- 加密函数 ----------
+    function genSalt(len = 16) {
+        const arr = new Uint8Array(len);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // 基于主密码派生密钥（简单迭代）
+    function deriveKey(pwd, salt) {
+        let key = CryptoJS.SHA256(pwd + '::' + salt).toString();
+        for (let i = 0; i < 800; i++) {
+            key = CryptoJS.SHA256(key + '::' + salt).toString();
         }
+        return key;
+    }
 
-        // 生成随机 salt
-        function generateSalt(len = 16) {
-            const array = new Uint8Array(len);
-            crypto.getRandomValues(array);
-            return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
-        }
+    function encrypt(plain, keyHex) {
+        const key = CryptoJS.enc.Hex.parse(keyHex);
+        const iv = CryptoJS.lib.WordArray.random(16);
+        const enc = CryptoJS.AES.encrypt(plain, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        });
+        return iv.toString() + ':' + enc.toString();
+    }
 
-        // 从密码派生密钥 (使用 PBKDF2 或者简单哈希，这里用 CryptoJS 的 SHA256 + salt 多轮)
-        function deriveKey(password, salt) {
-            // 使用 SHA256 加盐迭代 1000 次，模拟密钥派生
-            let key = CryptoJS.SHA256(password + salt).toString();
-            for (let i = 0; i < 999; i++) {
-                key = CryptoJS.SHA256(key + salt).toString();
-            }
-            return key; // hex string
-        }
+    function decrypt(cipher, keyHex) {
+        const idx = cipher.indexOf(':');
+        if (idx < 0) throw new Error('bad cipher');
+        const ivHex = cipher.slice(0, idx);
+        const data = cipher.slice(idx + 1);
+        const key = CryptoJS.enc.Hex.parse(keyHex);
+        const iv = CryptoJS.enc.Hex.parse(ivHex);
+        const dec = CryptoJS.AES.decrypt(data, key, {
+            iv: iv,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        });
+        return dec.toString(CryptoJS.enc.Utf8);
+    }
 
-        // 加密数据 (AES)
-        function encryptData(plainText, keyHex) {
-            const key = CryptoJS.enc.Hex.parse(keyHex);
-            const iv = CryptoJS.lib.WordArray.random(16);
-            const encrypted = CryptoJS.AES.encrypt(plainText, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-            // 返回 iv + 密文
-            return iv.toString() + ':' + encrypted.toString();
-        }
-
-        // 解密数据
-        function decryptData(cipherWithIv, keyHex) {
-            const parts = cipherWithIv.split(':');
-            if (parts.length !== 2) throw new Error('无效密文格式');
-            const iv = CryptoJS.enc.Hex.parse(parts[0]);
-            const ciphertext = parts[1];
-            const key = CryptoJS.enc.Hex.parse(keyHex);
-            const decrypted = CryptoJS.AES.decrypt(ciphertext, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-            return decrypted.toString(CryptoJS.enc.Utf8);
-        }
-
-        // 从 localStorage 加载加密数据并解密到 decryptedItems
-        function loadAndDecryptItems() {
-            const encrypted = localStorage.getItem(STORAGE_KEY);
-            if (!encrypted) {
-                decryptedItems = [];
-                return true;
-            }
-            if (!masterPassword) return false; // 无密码无法解密
-
-            const salt = localStorage.getItem(SALT_KEY);
-            if (!salt) return false;
-
-            try {
-                const keyHex = deriveKey(masterPassword, salt);
-                const plainJson = decryptData(encrypted, keyHex);
-                decryptedItems = JSON.parse(plainJson) || [];
-                return true;
-            } catch (e) {
-                console.error('解密失败', e);
-                return false;
-            }
-        }
-
-        // 加密并保存 decryptedItems 到 localStorage
-        function encryptAndSaveItems() {
-            if (!masterPassword) {
-                showStatus('请先设置主密码', true);
-                return false;
-            }
+    // ---------- 保存与加载 ----------
+    function saveItems() {
+        if (!masterPassword) return false;
+        try {
             let salt = localStorage.getItem(SALT_KEY);
             if (!salt) {
-                salt = generateSalt(16);
+                salt = genSalt(16);
                 localStorage.setItem(SALT_KEY, salt);
             }
             const keyHex = deriveKey(masterPassword, salt);
-            const plainJson = JSON.stringify(decryptedItems);
-            const encrypted = encryptData(plainJson, keyHex);
-            localStorage.setItem(STORAGE_KEY, encrypted);
+            const json = JSON.stringify(items);
+            const enc = encrypt(json, keyHex);
+            localStorage.setItem(STORAGE_KEY, enc);
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    function loadItems() {
+        const enc = localStorage.getItem(STORAGE_KEY);
+        if (!enc) {
+            items = [];
             return true;
         }
-
-        // 首次设置主密码或者验证密码
-        function ensureMasterPassword() {
-            if (masterPassword) return true;
-
-            const storedHash = localStorage.getItem(MASTER_HASH_KEY);
-            if (storedHash) {
-                // 已有密码，验证
-                const pwd = prompt('🔑 输入主密码解锁仓库：');
-                if (!pwd) return false;
-                const salt = localStorage.getItem(SALT_KEY) || '';
-                const hash = CryptoJS.SHA256(pwd + salt).toString();
-                if (hash !== storedHash) {
-                    showStatus('密码错误，无法访问', true);
-                    return false;
-                }
-                masterPassword = pwd;
-                // 尝试解密已有数据
-                if (!loadAndDecryptItems()) {
-                    showStatus('解密失败，可能密码错误或数据损坏', true);
-                    masterPassword = null;
-                    return false;
-                }
-                renderItems();
-                showStatus('解锁成功');
-                return true;
-            } else {
-                // 全新设置密码
-                const pwd = prompt('🔐 设置主密码（用于加密所有数据，务必记住）：');
-                if (!pwd || pwd.trim() === '') {
-                    showStatus('必须设置密码', true);
-                    return false;
-                }
-                const confirm = prompt('再次输入主密码确认：');
-                if (pwd !== confirm) {
-                    showStatus('两次输入不一致', true);
-                    return false;
-                }
-                const salt = generateSalt(16);
-                localStorage.setItem(SALT_KEY, salt);
-                const hash = CryptoJS.SHA256(pwd + salt).toString();
-                localStorage.setItem(MASTER_HASH_KEY, hash);
-                masterPassword = pwd;
-                decryptedItems = [];
-                encryptAndSaveItems();
-                renderItems();
-                showStatus('主密码已设置，仓库已加密');
-                return true;
-            }
+        const salt = localStorage.getItem(SALT_KEY);
+        if (!salt) return false;
+        try {
+            const keyHex = deriveKey(masterPassword, salt);
+            const json = decrypt(enc, keyHex);
+            items = JSON.parse(json) || [];
+            return true;
+        } catch (e) {
+            console.error('解密失败', e);
+            return false;
         }
+    }
 
-        // ---------- 自动识别 URL + sk- 逻辑 ----------
-        // 匹配 URL 后面跟着 sk- 密钥，返回 { url, key, label }
-        function parseApiKeys(text) {
-            // 先按行分割，再合并行内内容
-            const lines = text.split(/\r?\n/);
-            const results = [];
-            // 将每一行再拆成token, 但保留url和sk-的相邻关系
-            for (let line of lines) {
-                line = line.trim();
-                if (!line) continue;
-                // 尝试匹配 一个URL 紧接着 sk- 开头的字符串（中间可有空格/逗号等）
-                // 使用正则: (https?:\/\/[^\s,;]+)\s*[,;\s]?\s*(sk-[a-zA-Z0-9\-_]+)
-                const regex = /(https?:\/\/[^\s,;]+)\s*[,;\s]?\s*(sk-[a-zA-Z0-9\-_]+)/gi;
-                let match;
-                let foundInLine = false;
-                while ((match = regex.exec(line)) !== null) {
-                    foundInLine = true;
-                    const url = match[1].trim();
-                    const key = match[2].trim();
-                    if (url && key) {
-                        results.push({
-                            url: url,
-                            key: key,
-                            label: 'API 密钥'
-                        });
-                    }
-                }
-                // 如果整行没有匹配，再检查是否只有 sk- 开头或者 url 单独出现？ 为了不遗漏，但也要谨慎。
-                // 但用户只要求url紧跟着sk，所以不额外处理单独的了。不过对于类似 "sk-xxxx" 单独出现，我们不自动存储，因为可能无意义。
-                // 但可能一行是 "https://... sk-..." 已匹配。如果一行是多个呢？regex 已经全局匹配。
-                // 更宽松一点: 如果没找到匹配，但行内包含 sk- 和 http，但是顺序不对或中间有别的？我们简单处理：查找所有URL和所有sk-，如果数量相等且在同一行，按顺序配对？
-                // 为了更智能，再尝试简单配对：提取行内所有URL和所有sk-字符串，如果数量一致就按顺序配对。
-                if (!foundInLine) {
-                    const urlPattern = /https?:\/\/[^\s,;]+/gi;
-                    const keyPattern = /sk-[a-zA-Z0-9\-_]+/gi;
-                    const urls = line.match(urlPattern) || [];
-                    const keys = line.match(keyPattern) || [];
-                    if (urls.length > 0 && urls.length === keys.length) {
-                        for (let i = 0; i < urls.length; i++) {
-                            results.push({
-                                url: urls[i],
-                                key: keys[i],
-                                label: 'API 密钥'
-                            });
-                        }
-                    } else if (urls.length === 1 && keys.length === 1) {
-                        results.push({
-                            url: urls[0],
-                            key: keys[0],
-                            label: 'API 密钥'
-                        });
-                    }
-                }
-            }
-            // 去重 (根据url+key)
-            const unique = [];
-            const seen = new Set();
-            for (let r of results) {
-                const sig = r.url + '|' + r.key;
-                if (!seen.has(sig)) {
-                    seen.add(sig);
-                    unique.push(r);
-                }
-            }
-            return unique;
-        }
+    // ==================== 安全键盘 ====================
+    // 返回 Promise<string|null> 输入结果
+    function secureInput(title = '🔐 输入主密码', sub = '使用下方键盘输入，防止键盘记录') {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('keyboardOverlay');
+            const titleEl = document.getElementById('keyboardTitle');
+            const subEl = document.getElementById('keyboardSub');
+            const display = document.getElementById('pinDisplay');
+            const keypad = document.getElementById('keypad');
 
-        // ---------- 渲染列表 ----------
-        function renderItems() {
-            const container = document.getElementById('itemsContainer');
-            const countSpan = document.getElementById('itemCount');
-            if (!container) return;
+            titleEl.textContent = title;
+            subEl.textContent = sub;
 
-            if (!decryptedItems.length) {
-                container.innerHTML = `<div class="empty-state">✨ 还没有保存任何密钥<br><span style="font-size: 12px;">粘贴包含 URL 和 sk- 的文本，点击「识别并存储」</span></div>`;
-                if (countSpan) countSpan.textContent = '0 条';
-                return;
+            let value = '';
+            const MAX_LEN = 64;
+
+            function renderDots() {
+                if (value.length === 0) {
+                    display.innerHTML = '<span style="color:#cbd5e1;font-size:13px;align-self:center;">请输入</span>';
+                    return;
+                }
+                // 只显示最近12个点，防止过长
+                const showLen = Math.min(value.length, 16);
+                let html = '';
+                for (let i = 0; i < showLen; i++) {
+                    html += '<div class="pin-dot filled"></div>';
+                }
+                if (value.length > 16) {
+                    html += '<span style="align-self:center;color:#94a3b8;font-size:12px;">+' + (value.length - 16) + '</span>';
+                }
+                display.innerHTML = html;
             }
 
-            let html = '';
-            decryptedItems.forEach((item, index) => {
-                // 脱敏显示 key
-                const keyPreview = item.key.length > 12 ? item.key.slice(0, 6) + '...' + item.key.slice(-6) : item.key;
-                html += `
-                    <div class="item-card" data-index="${index}">
-                        <div class="item-info">
-                            <div class="item-type">${escapeHtml(item.label || 'API 密钥')}</div>
-                            <div class="item-label">${escapeHtml(item.url)}</div>
-                            <div class="item-value">
-                                <span class="secret" title="悬停显示完整密钥">${escapeHtml(keyPreview)}</span>
-                                <span style="color: #4a5f7a; font-size: 11px;">(悬停显示完整)</span>
-                            </div>
-                        </div>
-                        <div class="item-actions">
-                            <button class="icon-btn copy-btn" data-copy-index="${index}">📋 复制</button>
-                            <button class="icon-btn" data-delete-index="${index}">🗑️</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-            if (countSpan) countSpan.textContent = `${decryptedItems.length} 条`;
+            function buildKeypad() {
+                const keys = [
+                    { label: '1', val: '1' }, { label: '2', val: '2' }, { label: '3', val: '3' },
+                    { label: '4', val: '4' }, { label: '5', val: '5' }, { label: '6', val: '6' },
+                    { label: '7', val: '7' }, { label: '8', val: '8' }, { label: '9', val: '9' },
+                    { label: '⇧', val: 'shift', func: true },
+                    { label: '0', val: '0' },
+                    { label: '⌫', val: 'back', func: true }
+                ];
 
-            // 绑定复制事件
-            container.querySelectorAll('[data-copy-index]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = btn.dataset.copyIndex;
-                    if (idx !== undefined && decryptedItems[idx]) {
-                        const item = decryptedItems[idx];
-                        // 复制格式: url + 空格 + key
-                        const copyText = `${item.url} ${item.key}`;
-                        navigator.clipboard.writeText(copyText).then(() => {
-                            showStatus('✅ 已复制 API URL 和密钥');
-                        }).catch(() => {
-                            showStatus('复制失败，请手动复制', true);
-                        });
-                    }
-                });
-            });
-
-            // 绑定删除事件
-            container.querySelectorAll('[data-delete-index]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = btn.dataset.deleteIndex;
-                    if (idx !== undefined && decryptedItems[idx]) {
-                        if (confirm('确定删除这条记录吗？')) {
-                            decryptedItems.splice(idx, 1);
-                            if (encryptAndSaveItems()) {
-                                renderItems();
-                                showStatus('已删除');
-                            } else {
-                                showStatus('删除失败，请重试', true);
+                keypad.innerHTML = '';
+                keys.forEach(k => {
+                    const btn = document.createElement('button');
+                    btn.className = 'key' + (k.func ? ' func' : '');
+                    btn.textContent = k.label;
+                    btn.type = 'button';
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (k.val === 'back') {
+                            value = value.slice(0, -1);
+                        } else if (k.val === 'shift') {
+                            // 切换大小写或符号？这里简单处理为清空
+                            value = '';
+                        } else {
+                            if (value.length < MAX_LEN) {
+                                value += k.val;
                             }
                         }
-                    }
+                        renderDots();
+                    });
+                    keypad.appendChild(btn);
                 });
-            });
-        }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/[&<>"]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                if (m === '"') return '&quot;';
-                return m;
-            });
-        }
-
-        // ---------- 初始化加载 ----------
-        function init() {
-            // 先检查是否有密码，如果有，必须输入才能继续
-            const storedHash = localStorage.getItem(MASTER_HASH_KEY);
-            if (storedHash) {
-                // 有密码，显示锁定状态，等待用户解锁
-                const container = document.getElementById('itemsContainer');
-                if (container) {
-                    container.innerHTML = `<div class="empty-state">🔒 仓库已加密<br><span style="font-size: 12px;">请点击任意功能按钮输入主密码解锁</span></div>`;
-                }
-                // 绑定一个全局解锁事件，但每次操作都会触发 ensureMasterPassword
-            } else {
-                // 没有密码，可以直接设置
-                // 但不自动弹出，等用户点击按钮或者粘贴时触发
-                renderItems(); // 空列表
+                // 确认键
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'key confirm';
+                confirmBtn.textContent = '✓ 确认';
+                confirmBtn.style.gridColumn = 'span 3';
+                confirmBtn.style.aspectRatio = 'auto';
+                confirmBtn.style.padding = '14px';
+                confirmBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    cleanup();
+                    resolve(value);
+                });
+                keypad.appendChild(confirmBtn);
             }
-        }
 
-        // 每次涉及读写时确保密码已设置并解密
-        function requireUnlock() {
-            if (!masterPassword) {
-                if (!ensureMasterPassword()) return false;
+            function cleanup() {
+                overlay.classList.remove('active');
+                keypad.innerHTML = '';
+                display.innerHTML = '';
+                document.removeEventListener('keydown', keyHandler);
             }
-            // 如果密码已存在但 decryptedItems 为空且 localstorage 有数据，尝试再次解密
-            if (masterPassword && decryptedItems.length === 0) {
-                if (localStorage.getItem(STORAGE_KEY)) {
-                    loadAndDecryptItems();
+
+            function keyHandler(e) {
+                if (e.key >= '0' && e.key <= '9') {
+                    if (value.length < MAX_LEN) value += e.key;
+                    renderDots();
+                } else if (e.key === 'Backspace') {
+                    value = value.slice(0, -1);
+                    renderDots();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    cleanup();
+                    resolve(value);
+                } else if (e.key === 'Escape') {
+                    cleanup();
+                    resolve(null);
                 }
             }
+
+            document.addEventListener('keydown', keyHandler);
+
+            renderDots();
+            buildKeypad();
+            overlay.classList.add('active');
+        });
+    }
+
+    // ==================== 认证流程 ====================
+    async function ensureAuth() {
+        if (masterPassword) return true;
+
+        const storedVerify = localStorage.getItem(VERIFY_KEY);
+        const salt = localStorage.getItem(SALT_KEY);
+
+        if (storedVerify && salt) {
+            // 已有密码，验证
+            const pwd = await secureInput('🔐 解锁仓库', '请输入主密码');
+            if (pwd === null) return false;
+            const hash = CryptoJS.SHA256(pwd + '::' + salt).toString();
+            if (hash !== storedVerify) {
+                toast('密码错误', 'error');
+                return false;
+            }
+            masterPassword = pwd;
+            if (!loadItems()) {
+                toast('数据损坏或密码不匹配', 'error');
+                masterPassword = null;
+                return false;
+            }
+            render();
+            toast('解锁成功', 'success');
+            return true;
+        } else {
+            // 首次设置密码
+            const pwd = await secureInput('🔐 设置主密码', '第一次使用，请设置主密码');
+            if (pwd === null || pwd.length < 4) {
+                toast('密码至少4位', 'error');
+                return false;
+            }
+            const confirm = await secureInput('🔁 确认主密码', '请再次输入相同密码');
+            if (confirm !== pwd) {
+                toast('两次输入不一致', 'error');
+                return false;
+            }
+            const newSalt = genSalt(16);
+            localStorage.setItem(SALT_KEY, newSalt);
+            const hash = CryptoJS.SHA256(pwd + '::' + newSalt).toString();
+            localStorage.setItem(VERIFY_KEY, hash);
+            masterPassword = pwd;
+            items = [];
+            saveItems();
+            render();
+            toast('密码已设置，仓库已加密', 'success');
             return true;
         }
+    }
 
-        // ---------- 事件绑定 ----------
-        window.addEventListener('load', () => {
-            init();
+    // ==================== 智能识别 ====================
+    // 从文本中提取 (url, key) 对
+    function extractPairs(text) {
+        const results = [];
+        const seen = new Set();
 
-            // 解析按钮
-            document.getElementById('parseBtn').addEventListener('click', () => {
-                if (!requireUnlock()) return;
+        function addPair(url, key) {
+            if (!url || !key) return;
+            url = url.trim().replace(/[.,;]+$/, '');
+            key = key.trim().replace(/[.,;]+$/, '');
+            if (!url.startsWith('http')) return;
+            if (!key.startsWith('sk-')) return;
+            const sig = url + '|' + key;
+            if (seen.has(sig)) return;
+            seen.add(sig);
+            results.push({ url, key });
+        }
 
-                const textarea = document.getElementById('pasteArea');
-                const text = textarea.value.trim();
-                if (!text) {
-                    showStatus('请粘贴一些内容', true);
-                    return;
+        // 按行处理
+        const lines = text.split(/\r?\n/);
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+
+            // 策略1：正则直接匹配 URL 紧跟 sk-
+            const directRe = /(https?:\/\/[^\s,;]+)\s*[,;\s]?\s*(sk-[A-Za-z0-9\-_]+)/gi;
+            let m;
+            let matched = false;
+            while ((m = directRe.exec(line)) !== null) {
+                addPair(m[1], m[2]);
+                matched = true;
+            }
+            if (matched) continue;
+
+            // 策略2：提取所有URL和所有sk-，按顺序配对（数量相等）
+            const urlRe = /https?:\/\/[^\s,;]+/gi;
+            const keyRe = /sk-[A-Za-z0-9\-_]+/gi;
+            const urls = line.match(urlRe) || [];
+            const keys = line.match(keyRe) || [];
+            if (urls.length > 0 && urls.length === keys.length) {
+                for (let i = 0; i < urls.length; i++) {
+                    addPair(urls[i], keys[i]);
                 }
+            }
+        }
 
-                const parsed = parseApiKeys(text);
-                if (parsed.length === 0) {
-                    showStatus('未识别到 URL + sk- 格式，请检查', true);
-                    return;
-                }
+        return results;
+    }
 
-                // 合并到现有列表，去重（基于url+key）
-                const existingSig = new Set(decryptedItems.map(it => it.url + '|' + it.key));
-                let added = 0;
-                for (let p of parsed) {
-                    const sig = p.url + '|' + p.key;
-                    if (!existingSig.has(sig)) {
-                        decryptedItems.push({
-                            id: Date.now() + Math.random().toString(36).substr(2, 6),
-                            type: 'api',
-                            url: p.url,
-                            key: p.key,
-                            label: p.label || 'API 密钥'
-                        });
-                        existingSig.add(sig);
-                        added++;
-                    }
-                }
+    // ==================== 渲染 ====================
+    function render() {
+        const container = document.getElementById('items');
+        const countEl = document.getElementById('count');
+        countEl.textContent = items.length + ' 条';
 
-                if (added > 0) {
-                    if (encryptAndSaveItems()) {
-                        renderItems();
-                        textarea.value = ''; // 清空方便下次粘贴
-                        showStatus(`✅ 识别并保存了 ${added} 条API密钥`);
-                    } else {
-                        showStatus('保存失败，请重试', true);
-                    }
-                } else {
-                    showStatus('没有新的密钥（已存在相同条目）', false);
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="empty">
+                    <div class="big">🗂️</div>
+                    <div>还没有保存任何密钥</div>
+                    <div style="margin-top:6px;font-size:13px;">在上方粘贴包含 URL 和 sk- 的文本，点击「识别并保存」</div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        items.forEach((item, idx) => {
+            const keyDisplay = maskKey(item.key);
+            html += `
+                <div class="card" data-id="${item.id}">
+                    <div class="card-top">
+                        <div class="card-name">
+                            <span>🔑</span>
+                            <input class="name-input" type="text" value="${escapeAttr(item.name || '未命名')}"
+                                   data-id="${item.id}" data-field="name" placeholder="点击命名">
+                        </div>
+                        <div class="card-actions">
+                            <button class="mini-btn delete" data-id="${item.id}" title="删除">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">URL</div>
+                        <input class="field-value" type="text" value="${escapeAttr(item.url)}"
+                               data-id="${item.id}" data-field="url" spellcheck="false">
+                        <div class="field-btns">
+                            <button class="copy-btn" data-copy="url" data-id="${item.id}">📋 复制</button>
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">KEY</div>
+                        <input class="field-value masked" type="text" value="${escapeAttr(keyDisplay)}"
+                               data-id="${item.id}" data-field="key" data-real="${escapeAttr(item.key)}"
+                               spellcheck="false" autocomplete="off">
+                        <div class="field-btns">
+                            <button class="eye-btn" data-eye="${item.id}" title="显示/隐藏">👁️</button>
+                            <button class="copy-btn" data-copy="key" data-id="${item.id}">📋 复制</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+
+        // 绑定事件
+        container.querySelectorAll('.name-input').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const id = inp.dataset.id;
+                const it = items.find(i => i.id === id);
+                if (it) {
+                    it.name = inp.value.trim() || '未命名';
+                    saveItems();
                 }
             });
-
-            // 导出加密备份
-            document.getElementById('exportBtn').addEventListener('click', () => {
-                if (!requireUnlock()) return;
-                const encrypted = localStorage.getItem(STORAGE_KEY);
-                const salt = localStorage.getItem(SALT_KEY);
-                const hash = localStorage.getItem(MASTER_HASH_KEY);
-                if (!encrypted || !salt || !hash) {
-                    showStatus('没有可导出的数据', true);
-                    return;
-                }
-                const backup = {
-                    version: 1,
-                    salt: salt,
-                    masterHash: hash,
-                    encryptedData: encrypted,
-                    exportedAt: new Date().toISOString()
-                };
-                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `vault_backup_${new Date().toISOString().slice(0,10)}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                showStatus('📦 加密备份已导出');
+            inp.addEventListener('blur', (e) => {
+                if (inp.value.trim() === '') inp.value = '未命名';
             });
-
-            // 导入备份
-            const fileInput = document.getElementById('fileInput');
-            document.getElementById('importBtn').addEventListener('click', () => {
-                if (!requireUnlock()) return;  // 需要先解锁当前仓库（或者也可以允许导入覆盖？这里要求先解锁以防误操作）
-                fileInput.click();
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') inp.blur();
             });
-
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const backup = JSON.parse(ev.target.result);
-                        if (!backup.salt || !backup.encryptedData || !backup.masterHash) {
-                            throw new Error('备份文件格式不正确');
-                        }
-                        // 确认覆盖
-                        if (!confirm('导入将覆盖当前所有数据，确定吗？')) return;
-                        // 更新本地存储
-                        localStorage.setItem(SALT_KEY, backup.salt);
-                        localStorage.setItem(MASTER_HASH_KEY, backup.masterHash);
-                        localStorage.setItem(STORAGE_KEY, backup.encryptedData);
-                        // 重置主密码并重新解锁
-                        masterPassword = null;
-                        decryptedItems = [];
-                        // 触发重新解锁流程
-                        if (ensureMasterPassword()) {
-                            // 重新加载数据
-                            loadAndDecryptItems();
-                            renderItems();
-                            showStatus('✅ 备份导入成功');
-                        } else {
-                            showStatus('导入失败，密码错误', true);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        showStatus('导入失败：文件损坏或格式错误', true);
-                    }
-                    fileInput.value = '';
-                };
-                reader.readAsText(file);
-            });
-
-            // 清空所有
-            document.getElementById('clearAllBtn').addEventListener('click', () => {
-                if (!requireUnlock()) return;
-                if (!confirm('⚠️ 确定清空所有存储的密钥吗？无法恢复！')) return;
-                decryptedItems = [];
-                localStorage.removeItem(STORAGE_KEY);
-                // 保留 salt 和 master hash 以便继续使用
-                encryptAndSaveItems(); // 保存空数组
-                renderItems();
-                showStatus('已清空所有数据');
-            });
-
-            // 点击复制悬停显示完整key (已在render里通过css hover实现)
         });
 
-        // 处理粘贴后的自动识别：也可以加一个粘贴事件自动解析（可选），但用户要点击按钮，不自动，以防误操作。
-        // 我们保持手动点击。
+        container.querySelectorAll('.field-value').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const id = inp.dataset.id;
+                const field = inp.dataset.field;
+                const it = items.find(i => i.id === id);
+                if (!it) return;
+                if (field === 'url') {
+                    let v = inp.value.trim();
+                    if (!v.startsWith('http')) {
+                        toast('URL 应以 http 开头', 'error');
+                        inp.value = it.url;
+                        return;
+                    }
+                    it.url = v;
+                    saveItems();
+                } else if (field === 'key') {
+                    // 编辑密钥：当前显示的是掩码，需要还原
+                    const real = inp.dataset.real || it.key;
+                    // 如果用户修改了，以输入框内容为准（但输入框是掩码，不合理，所以这里禁止直接编辑密钥？）
+                    // 实际上用户要编辑密钥，应该允许。但我们显示的是掩码，所以直接编辑会乱。
+                    // 解决方案：聚焦时自动切换为真实值
+                    // 已在下方 focus 事件处理
+                }
+            });
 
-    })();
+            // 聚焦密钥时显示真实值
+            if (inp.dataset.field === 'key') {
+                inp.addEventListener('focus', () => {
+                    const id = inp.dataset.id;
+                    const it = items.find(i => i.id === id);
+                    if (it) {
+                        inp.value = it.key;
+                        inp.classList.remove('masked');
+                        inp.dataset.real = it.key;
+                    }
+                });
+                inp.addEventListener('blur', () => {
+                    const id = inp.dataset.id;
+                    const it = items.find(i => i.id === id);
+                    if (!it) return;
+                    const newVal = inp.value.trim();
+                    if (newVal && newVal !== it.key) {
+                        it.key = newVal;
+                        saveItems();
+                        toast('密钥已更新', 'success');
+                    }
+                    // 重新掩码
+                    inp.value = maskKey(it.key);
+                    inp.classList.add('masked');
+                    inp.dataset.real = it.key;
+                });
+            }
+        });
+
+        // 复制按钮
+        container.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.dataset.id;
+                const type = btn.dataset.copy;
+                const it = items.find(i => i.id === id);
+                if (!it) return;
+                const text = type === 'url' ? it.url : it.key;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const orig = btn.textContent;
+                    btn.textContent = '✅ 已复制';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = orig;
+                        btn.classList.remove('copied');
+                    }, 1500);
+                } catch (err) {
+                    toast('复制失败，请手动选择', 'error');
+                }
+            });
+        });
+
+        // 显示/隐藏密钥
+        container.querySelectorAll('.eye-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.eye;
+                const inp = container.querySelector(`.field-value[data-id="${id}"][data-field="key"]`);
+                if (!inp) return;
+                if (inp.classList.contains('masked')) {
+                    const it = items.find(i => i.id === id);
+                    if (it) {
+                        inp.value = it.key;
+                        inp.classList.remove('masked');
+                    }
+                } else {
+                    const it = items.find(i => i.id === id);
+                    if (it) {
+                        inp.value = maskKey(it.key);
+                        inp.classList.add('masked');
+                    }
+                }
+            });
+        });
+
+        // 删除
+        container.querySelectorAll('.mini-btn.delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                if (!confirm('确定删除这条记录吗？')) return;
+                items = items.filter(i => i.id !== id);
+                saveItems();
+                render();
+                toast('已删除', 'success');
+            });
+        });
+    }
+
+    function maskKey(key) {
+        if (!key || key.length < 10) return '••••••••';
+        return key.slice(0, 4) + '••••••••' + key.slice(-4);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[m]));
+    }
+
+    function escapeAttr(str) {
+        return escapeHtml(str).replace(/"/g, '&quot;');
+    }
+
+    // ==================== 事件绑定 ====================
+    async function handleParse() {
+        if (!await ensureAuth()) return;
+
+        const textarea = document.getElementById('pasteArea');
+        const text = textarea.value.trim();
+        if (!text) {
+            toast('请先粘贴内容', 'error');
+            return;
+        }
+
+        const pairs = extractPairs(text);
+        if (pairs.length === 0) {
+            toast('未识别到 URL + sk- 格式', 'error');
+            return;
+        }
+
+        // 去重：与现有 items 比对
+        let added = 0;
+        pairs.forEach(p => {
+            const exists = items.some(i => i.url === p.url && i.key === p.key);
+            if (!exists) {
+                items.push({
+                    id: uuid(),
+                    name: '未命名',
+                    url: p.url,
+                    key: p.key
+                });
+                added++;
+            }
+        });
+
+        if (added > 0) {
+            saveItems();
+            render();
+            textarea.value = '';
+            toast(`✅ 识别并保存了 ${added} 条`, 'success');
+        } else {
+            toast('没有新条目（均已存在）', 'error');
+        }
+    }
+
+    document.getElementById('parseBtn').addEventListener('click', handleParse);
+
+    // 导出
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+        if (!await ensureAuth()) return;
+        const enc = localStorage.getItem(STORAGE_KEY);
+        const salt = localStorage.getItem(SALT_KEY);
+        const verify = localStorage.getItem(VERIFY_KEY);
+        if (!enc || !salt || !verify) {
+            toast('没有可导出的数据', 'error');
+            return;
+        }
+        const backup = {
+            version: 2,
+            salt,
+            verify,
+            encrypted: enc,
+            exportedAt: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `密钥备份_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('📦 备份已导出', 'success');
+    });
+
+    // 导入
+    document.getElementById('importBtn').addEventListener('click', async () => {
+        if (!await ensureAuth()) return;
+        document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const backup = JSON.parse(ev.target.result);
+                if (!backup.salt || !backup.encrypted || !backup.verify) {
+                    throw new Error('格式错误');
+                }
+                if (!confirm('导入将覆盖当前所有数据，确定继续吗？')) return;
+                localStorage.setItem(SALT_KEY, backup.salt);
+                localStorage.setItem(VERIFY_KEY, backup.verify);
+                localStorage.setItem(STORAGE_KEY, backup.encrypted);
+                // 重置并重新认证
+                masterPassword = null;
+                items = [];
+                // 重新走认证
+                ensureAuth().then(ok => {
+                    if (ok) {
+                        render();
+                        toast('✅ 导入成功', 'success');
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                toast('导入失败：文件无效', 'error');
+            }
+            document.getElementById('fileInput').value = '';
+        };
+        reader.readAsText(file);
+    });
+
+    // 清空
+    document.getElementById('clearBtn').addEventListener('click', async () => {
+        if (!await ensureAuth()) return;
+        if (!confirm('⚠️ 确定清空所有密钥吗？无法恢复！')) return;
+        items = [];
+        saveItems();
+        render();
+        toast('已清空', 'success');
+    });
+
+    // 页面加载时如果已有数据，显示锁定状态
+    window.addEventListener('load', () => {
+        const hasData = localStorage.getItem(VERIFY_KEY);
+        if (hasData) {
+            document.getElementById('items').innerHTML = `
+                <div class="empty">
+                    <div class="big">🔒</div>
+                    <div>仓库已加密</div>
+                    <div style="margin-top:6px;font-size:13px;">点击任意操作按钮，输入主密码解锁</div>
+                </div>
+            `;
+            document.getElementById('count').textContent = '已锁定';
+        } else {
+            render();
+        }
+    });
+
+})();
 </script>
 </body>
 </html>
